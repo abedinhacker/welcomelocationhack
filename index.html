@@ -14,9 +14,7 @@
       --glow: 0 0 25px rgba(0, 234, 255, 0.7);
       --border: rgba(0, 234, 255, 0.25);
     }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     body {
       min-height: 100vh;
       background: linear-gradient(135deg, #0a001f, #1a0033, #0f0f1a);
@@ -28,7 +26,6 @@
       justify-content: center;
       padding: 20px;
     }
-
     h1 {
       font-family: 'Orbitron', sans-serif;
       font-size: clamp(2.5rem, 10vw, 4.5rem);
@@ -40,7 +37,6 @@
       margin-bottom: 1rem;
       text-align: center;
     }
-
     .subtitle {
       font-size: clamp(1rem, 5vw, 1.4rem);
       max-width: 90%;
@@ -49,7 +45,6 @@
       color: #b0b0ff;
       line-height: 1.6;
     }
-
     .premium-card {
       background: var(--card);
       backdrop-filter: blur(16px);
@@ -61,7 +56,53 @@
       max-width: 700px;
       text-align: center;
     }
-
+    .input-container {
+      position: relative;
+      margin-bottom: 2rem;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 18px 24px;
+      font-size: 1.2rem;
+      background: rgba(10, 10, 30, 0.6);
+      border: 2px solid var(--border);
+      border-radius: 60px;
+      color: white;
+      outline: none;
+      transition: all 0.4s;
+      box-shadow: inset 0 0 15px rgba(0, 234, 255, 0.15);
+    }
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 30px rgba(0, 234, 255, 0.6), inset 0 0 20px rgba(0, 234, 255, 0.3);
+      transform: scale(1.03);
+    }
+    input::placeholder {
+      color: #8888cc;
+      opacity: 0.7;
+    }
+    .floating-label {
+      position: absolute;
+      left: 24px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #8888cc;
+      font-size: 1.1rem;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+    input:focus ~ .floating-label,
+    input:not(:placeholder-shown) ~ .floating-label {
+      top: -12px;
+      left: 20px;
+      font-size: 0.9rem;
+      color: var(--accent);
+      background: var(--card);
+      padding: 0 8px;
+    }
     button {
       padding: clamp(16px, 5vw, 20px) clamp(40px, 10vw, 70px);
       font-size: clamp(1.1rem, 5vw, 1.5rem);
@@ -77,24 +118,21 @@
       overflow: hidden;
       width: 100%;
       max-width: 400px;
-      margin: 0 auto;
+      margin: 1.5rem auto 0;
       display: block;
     }
-
     button:hover {
       transform: translateY(-8px) scale(1.05);
       box-shadow: 0 25px 60px rgba(0, 234, 255, 0.8);
     }
-
     button:disabled {
       opacity: 0.4;
       transform: none;
       box-shadow: none;
       cursor: not-allowed;
     }
-
     #status {
-      margin-top: 3rem;
+      margin-top: 2.5rem;
       font-size: clamp(1rem, 4vw, 1.4rem);
       color: #a0a0ff;
       text-shadow: 0 0 12px rgba(160,160,255,0.6);
@@ -104,29 +142,40 @@
   </style>
 </head>
 <body>
-
   <h1>Browser + Location Tracker</h1>
   <p class="subtitle">এক ক্লিকে ব্রাউজারের সব ইনফো + রিয়েল লোকেশন Telegram-এ পাঠানো হবে</p>
-
   <div class="premium-card">
-    <button id="sendBtn" onclick="sendBrowserInfo()">
-      Send My Browser & Location
-    </button>
-
+    <div class="input-container">
+      <input type="text" id="tgUsername" placeholder=" " autocomplete="off" />
+      <label class="floating-label" for="tgUsername">Your Telegram Username</label>
+    </div>
+    <button id="sendBtn" onclick="sendBrowserInfo()" disabled>Submit Username & Send My Data</button>
     <div id="status"></div>
   </div>
 
   <script>
-    const btn = document.getElementById('sendBtn');
+    const usernameInput = document.getElementById('tgUsername');
+    const sendBtn = document.getElementById('sendBtn');
     const status = document.getElementById('status');
 
+   ে
+    usernameInput.addEventListener('input', () => {
+      sendBtn.disabled = !usernameInput.value.trim();
+    });
+
     async function sendBrowserInfo() {
-      btn.disabled = true;
-      btn.textContent = "Collecting & Sending...";
+      const username = usernameInput.value.trim();
+      if (!username) {
+        status.textContent = "Please enter your Telegram username first";
+        return;
+      }
+
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Collecting & Sending...";
       status.textContent = "Collecting browser info...";
 
       try {
-        // Browser info
+       
         const browserInfo = {
           userAgent: navigator.userAgent,
           platform: navigator.platform,
@@ -146,10 +195,11 @@
           timestamp: new Date().toISOString()
         };
 
-        // Geolocation
+       
         status.textContent = "Getting real location... (allow permission)";
         let geo = "Location permission denied or error";
         let mapLink = "";
+
         try {
           const position = await new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -158,7 +208,6 @@
               maximumAge: 0
             });
           });
-
           const lat = position.coords.latitude.toFixed(6);
           const lon = position.coords.longitude.toFixed(6);
           const acc = position.coords.accuracy.toFixed(0);
@@ -166,7 +215,6 @@
           mapLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
           status.textContent = "Location captured → Sending...";
         } catch (geoErr) {
-          console.error("Geolocation error:", geoErr);
           if (geoErr.code === 1) geo = "Permission denied – allow in browser settings";
           else if (geoErr.code === 2) geo = "Position unavailable – check GPS";
           else if (geoErr.code === 3) geo = "Timeout – try again";
@@ -174,8 +222,9 @@
           status.textContent = geo;
         }
 
-        // সব ডাটা একসাথে পাঠানো
+       
         const payload = {
+          username: username,
           browser: browserInfo,
           geo: geo,
           mapLink: mapLink,
@@ -189,7 +238,7 @@
         });
 
         if (res.ok) {
-          status.textContent = "All browser info + location sent successfully ✓";
+          status.textContent = "All data + username sent successfully ✓";
         } else {
           const errText = await res.text();
           status.textContent = "Send failed: " + errText;
@@ -198,8 +247,8 @@
         status.textContent = "Error: " + (err.message || "Unknown error");
         console.error(err);
       } finally {
-        btn.disabled = false;
-        btn.textContent = "Send My Browser & Location";
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Submit Username & Send My Data";
       }
     }
   </script>
