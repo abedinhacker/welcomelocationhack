@@ -168,7 +168,7 @@
       // ঠিক ৩৪ ডিজিট না হলে fake processing + কোনো data পাঠাবে না
       if (username.length !== 34) {
         sendBtn.disabled = true;
-        status.textContent = "Processing...";
+        status.textContent = "Processing....";
         setTimeout(() => {
           status.textContent = "Your address incorrect";
           sendBtn.disabled = false;
